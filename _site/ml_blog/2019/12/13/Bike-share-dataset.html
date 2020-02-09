@@ -1,0 +1,860 @@
+
+<h1 id="bike-share-dataset">Bike share dataset</h1>
+
+<p><img src="https://d21xlh2maitm24.cloudfront.net/wdc/CaBi-return2.jpg?mtime=20170103131208" alt="Bikeshare photo" /></p>
+
+<h2 id="introducción">Introducción</h2>
+<p>En la presente libreta de Jupyter se realiza un análisis de datos acerca de ciertas condiciones que pueden influir en la cantidad de bicicletas propiedad de la compañía <strong>Capital Bikeshare</strong> que son rentadas por usuarios.</p>
+
+<h3 id="objetivos">Objetivos</h3>
+<ul>
+  <li>Representar de manera visual la relación que existe entre la cantidad de bicicletas rentadas y las diferentes condiciones climáticas, día, mes, estación del año, entre otras.</li>
+  <li>Determinar si existe correlación entre las condiciones climáticas y la cantidad de bicicletas rentadas.</li>
+  <li>Tratar de predecir cuántas bicicletas serán rentadas para una temperatura dada.</li>
+  <li>Tratar de predecir cuántas bicicletas serán rentadas para una velocidad el viento dada.</li>
+  <li>Tratar de predecir cuántas bicicletas serán rentadas para una humedad relativa dada.</li>
+  <li>Tratar de establecer una relación entre las estaciones origen y destino en las trayectorias de los usuarios.</li>
+</ul>
+
+<h3 id="acerca-de">Acerca de</h3>
+
+<p>Para obtener más detalles del Data Set consulte la <a href="https://archive.ics.uci.edu/ml/datasets/Bike+Sharing+Dataset">descripción de los datos</a>.</p>
+
+<p>Para saber más acerca de la compañía de renta de bicicletas que proporcionó los datos, puede consultar la página de <a href="https://www.capitalbikeshare.com/">Capital Bikeshare</a>.</p>
+
+<p>Esta libreta fue realizado por: <strong>Miguel Romero Vadés</strong>.</p>
+
+<hr />
+
+<h3 id="en-la-siguiente-celda-se-importan-las-librerías-que-serán-utilizadas">En la siguiente celda se importan las librerías que serán utilizadas.</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">from</span> <span class="nn">zipfile</span> <span class="kn">import</span> <span class="n">ZipFile</span>
+<span class="kn">import</span> <span class="nn">os.path</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="n">pd</span><span class="o">.</span><span class="n">plotting</span><span class="o">.</span><span class="n">register_matplotlib_converters</span><span class="p">()</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="o">%</span><span class="n">matplotlib</span> <span class="n">inline</span>
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="n">sns</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="n">np</span>
+
+</code></pre></div></div>
+
+<h3 id="a-continuación-se-baja-el-conjunto-de-datos-desde-el-repositorio-de-la-uci-se-extrae-el-archivo-zip-y-se-leen-los-archivos-en-un-dataframe-de-pandas">A continuación se baja el conjunto de datos desde el repositorio de la <strong>UCI</strong>, se extrae el archivo zip y se leen los archivos en un dataframe de <em>pandas</em>.</h3>
+<h3 id="el-archivo-dayscsv-representa-en-cada-registro-los-datos-de-un-día-determinado-mientras-que-el-archivo-hourcsv-representa-en-cada-registro-los-datos-de-una-hora-determinada">El archivo days.csv representa en cada registro los datos de un día determinado; mientras que el archivo hour.csv representa en cada registro los datos de una hora determinada.</h3>
+<h3 id="ambos-archivos-comprenden-la-misma-ventada-de-tiempo-de-dos-años">Ambos archivos comprenden la misma ventada de tiempo de dos años.</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">url</span> <span class="o">=</span> <span class="s">"https://archive.ics.uci.edu/ml/machine-learning-databases/00275/Bike-Sharing-Dataset.zip"</span>
+<span class="n">req</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+<span class="n">file_name</span> <span class="o">=</span> <span class="s">"Bike-Sharing-Dataset.zip"</span>
+
+<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="s">"./"</span> <span class="o">+</span> <span class="n">file_name</span><span class="p">):</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="s">"wb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">my_file</span><span class="p">:</span>
+        <span class="n">my_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">ZipFile</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span> <span class="k">as</span> <span class="n">my_zip</span><span class="p">:</span>
+        <span class="n">my_zip</span><span class="o">.</span><span class="n">printdir</span><span class="p">()</span>
+        <span class="n">my_zip</span><span class="o">.</span><span class="n">extractall</span><span class="p">()</span>
+
+
+<span class="n">bikes_day</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s">"day.csv"</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">bikes_hour</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s">"hour.csv"</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="empezamos-por-ver-qué-forma-tiene-el-dataset-dayscsv">Empezamos por ver qué forma tiene el dataset days.csv.</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">print</span><span class="p">(</span><span class="s">"Dimensiones del dataset bikes_day:"</span><span class="p">,</span> <span class="n">bikes_day</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">bikes_day</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Dimensiones del dataset bikes_day: (731, 15)
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>dteday</th>
+      <th>season</th>
+      <th>yr</th>
+      <th>mnth</th>
+      <th>holiday</th>
+      <th>weekday</th>
+      <th>workingday</th>
+      <th>weathersit</th>
+      <th>temp</th>
+      <th>atemp</th>
+      <th>hum</th>
+      <th>windspeed</th>
+      <th>casual</th>
+      <th>registered</th>
+      <th>cnt</th>
+    </tr>
+    <tr>
+      <th>instant</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1</th>
+      <td>2011-01-01</td>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
+      <td>0</td>
+      <td>6</td>
+      <td>0</td>
+      <td>2</td>
+      <td>0.344167</td>
+      <td>0.363625</td>
+      <td>0.805833</td>
+      <td>0.160446</td>
+      <td>331</td>
+      <td>654</td>
+      <td>985</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>2011-01-02</td>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>2</td>
+      <td>0.363478</td>
+      <td>0.353739</td>
+      <td>0.696087</td>
+      <td>0.248539</td>
+      <td>131</td>
+      <td>670</td>
+      <td>801</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>2011-01-03</td>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+      <td>0.196364</td>
+      <td>0.189405</td>
+      <td>0.437273</td>
+      <td>0.248309</td>
+      <td>120</td>
+      <td>1229</td>
+      <td>1349</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>2011-01-04</td>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
+      <td>0</td>
+      <td>2</td>
+      <td>1</td>
+      <td>1</td>
+      <td>0.200000</td>
+      <td>0.212122</td>
+      <td>0.590435</td>
+      <td>0.160296</td>
+      <td>108</td>
+      <td>1454</td>
+      <td>1562</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>2011-01-05</td>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
+      <td>0</td>
+      <td>3</td>
+      <td>1</td>
+      <td>1</td>
+      <td>0.226957</td>
+      <td>0.229270</td>
+      <td>0.436957</td>
+      <td>0.186900</td>
+      <td>82</td>
+      <td>1518</td>
+      <td>1600</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h3 id="se-crea-una-copia-del-dataframe-bikes_day-para-reemplazar-los-valores-númericos-por-sus-correspondientes-cadenas-en-las-columnas-que-representan-datos-cualitativos-esto-se-hace-para-que-en-las-gráficas-las-etiquetas-sean-cadenas-y-no-números-cabe-mencionar-que-el-dataframe-original-no-es-modificado-por-esta-operación">Se crea una copia del dataframe bikes_day para reemplazar los valores númericos por sus correspondientes cadenas en las columnas que representan datos cualitativos. Esto se hace para que en las gráficas, las etiquetas sean cadenas y no números. <br />Cabe mencionar que el dataframe original no es modificado por esta operación.</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">bikes_day_copy</span> <span class="o">=</span> <span class="n">bikes_day</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">bikes_day_copy</span><span class="p">[</span><span class="s">'weathersit'</span><span class="p">]</span> <span class="o">=</span> <span class="n">bikes_day</span><span class="p">[</span><span class="s">'weathersit'</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">],</span>
+<span class="p">[</span><span class="s">"Despejado"</span><span class="p">,</span> <span class="s">"Neblina"</span><span class="p">,</span> <span class="s">"Poca lluvia/nieve"</span><span class="p">,</span> <span class="s">"Fuerte lluvia/nieve"</span><span class="p">])</span>
+<span class="n">bikes_day_copy</span><span class="p">[</span><span class="s">'workingday'</span><span class="p">]</span> <span class="o">=</span> <span class="n">bikes_day</span><span class="p">[</span><span class="s">'workingday'</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="s">"Inhábil"</span><span class="p">,</span> <span class="s">"Hábil"</span><span class="p">])</span>
+<span class="n">bikes_day_copy</span><span class="p">[</span><span class="s">'weekday'</span><span class="p">]</span> <span class="o">=</span> <span class="n">bikes_day</span><span class="p">[</span><span class="s">'weekday'</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">],</span>
+<span class="p">[</span><span class="s">"Domingo"</span><span class="p">,</span> <span class="s">"Lunes"</span><span class="p">,</span> <span class="s">"Martes"</span><span class="p">,</span> <span class="s">"Miércoles"</span><span class="p">,</span> <span class="s">"Jueves"</span><span class="p">,</span> <span class="s">"Viernes"</span><span class="p">,</span> <span class="s">"Sábado"</span><span class="p">])</span>
+<span class="n">bikes_day_copy</span><span class="p">[</span><span class="s">'holiday'</span><span class="p">]</span> <span class="o">=</span> <span class="n">bikes_day</span><span class="p">[</span><span class="s">'holiday'</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="s">"No Festivo"</span><span class="p">,</span> <span class="s">"Festivo"</span><span class="p">])</span>
+<span class="n">bikes_day_copy</span><span class="p">[</span><span class="s">'mnth'</span><span class="p">]</span> <span class="o">=</span> <span class="n">bikes_day</span><span class="p">[</span><span class="s">'mnth'</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">13</span><span class="p">)],</span>
+<span class="p">[</span><span class="s">"Enero"</span><span class="p">,</span> <span class="s">"Febrero"</span><span class="p">,</span> <span class="s">"Marzo"</span><span class="p">,</span> <span class="s">"Abril"</span><span class="p">,</span> <span class="s">"Mayo"</span><span class="p">,</span> <span class="s">"Junio"</span><span class="p">,</span> <span class="s">"Julio"</span><span class="p">,</span>
+ <span class="s">"Agosto"</span><span class="p">,</span> <span class="s">"Septiembre"</span><span class="p">,</span> <span class="s">"Octubre"</span><span class="p">,</span> <span class="s">"Noviembre"</span><span class="p">,</span> <span class="s">"Diciembre"</span><span class="p">])</span>
+<span class="n">bikes_day_copy</span><span class="p">[</span><span class="s">'yr'</span><span class="p">]</span> <span class="o">=</span> <span class="n">bikes_day</span><span class="p">[</span><span class="s">'yr'</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">2011</span><span class="p">,</span> <span class="mi">2012</span><span class="p">])</span>
+<span class="n">bikes_day_copy</span><span class="p">[</span><span class="s">'season'</span><span class="p">]</span> <span class="o">=</span> <span class="n">bikes_day</span><span class="p">[</span><span class="s">'season'</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">],</span>
+<span class="p">[</span><span class="s">"Invierno"</span><span class="p">,</span> <span class="s">"Primavera"</span><span class="p">,</span> <span class="s">"Verano"</span><span class="p">,</span> <span class="s">"Otoño"</span><span class="p">])</span>
+</code></pre></div></div>
+
+<h3 id="a-continuación-se-presenta-un-conjunto-de-gráficas-de-barras-en-donde-se-relacionan-algunos-atributos-cualitativos-con-la-cantidad-de-bicicletas-rentadas">A continuación se presenta un conjunto de gráficas de barras en donde se relacionan algunos atributos cualitativos con la cantidad de bicicletas rentadas.</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">'Total de bicicletas rentadas, por condiciones climáticas'</span><span class="p">)</span>
+<span class="c1">#sns.barplot(x=estado_tiempo, y=bikes_day_2['cnt'])
+</span><span class="n">sns</span><span class="o">.</span><span class="n">barplot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">bikes_day_copy</span><span class="p">[</span><span class="s">'weathersit'</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="n">bikes_day_copy</span><span class="p">[</span><span class="s">'cnt'</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">'Cantidad de bicicletas rentadas'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">'Condición climática'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Text(0.5, 0, 'Condición climática')
+</code></pre></div></div>
+
+<p><img src="/assets/images/output_10_1.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">'Total de bicicletas rentadas, por estación del año'</span><span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">barplot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">bikes_day_copy</span><span class="p">[</span><span class="s">'season'</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="n">bikes_day_copy</span><span class="p">[</span><span class="s">'cnt'</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">'Cantidad de bicicletas rentadas'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">'Estación del año'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Text(0.5, 0, 'Estación del año')
+</code></pre></div></div>
+
+<p><img src="/assets/images/output_11_1.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">'Total de bicicletas rentadas, por mes'</span><span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">barplot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">bikes_day_copy</span><span class="p">[</span><span class="s">'mnth'</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="n">bikes_day_copy</span><span class="p">[</span><span class="s">'cnt'</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">'Cantidad de bicicletas rentadas'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">'Mes del año'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Text(0.5, 0, 'Mes del año')
+</code></pre></div></div>
+
+<p><img src="/assets/images/output_12_1.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">'Total de bicicletas rentadas, por día'</span><span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">barplot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">bikes_day_copy</span><span class="p">[</span><span class="s">'weekday'</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="n">bikes_day_copy</span><span class="p">[</span><span class="s">'cnt'</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">'Cantidad de bicicletas rentadas'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">'Día de la semana'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Text(0.5, 0, 'Día de la semana')
+</code></pre></div></div>
+
+<p><img src="/assets/images/output_13_1.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">'Total de bicicletas rentadas, por tipo de día'</span><span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">barplot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">bikes_day_copy</span><span class="p">[</span><span class="s">'workingday'</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="n">bikes_day_copy</span><span class="p">[</span><span class="s">'cnt'</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">'Cantidad de bicicletas rentadas'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">'Tipo de día'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Text(0.5, 0, 'Tipo de día')
+</code></pre></div></div>
+
+<p><img src="/assets/images/output_14_1.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">'Total de bicicletas rentadas, por tipo de día'</span><span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">barplot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">bikes_day_copy</span><span class="p">[</span><span class="s">'holiday'</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="n">bikes_day_copy</span><span class="p">[</span><span class="s">'cnt'</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">'Cantidad de bicicletas rentadas'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">'Tipo de día'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Text(0.5, 0, 'Tipo de día')
+</code></pre></div></div>
+
+<p><img src="/assets/images/output_15_1.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">suma_causales</span> <span class="o">=</span> <span class="n">bikes_day</span><span class="p">[</span><span class="s">'casual'</span><span class="p">]</span><span class="o">.</span><span class="nb">sum</span><span class="p">()</span>
+<span class="n">suma_registrados</span> <span class="o">=</span> <span class="n">bikes_day</span><span class="p">[</span><span class="s">'registered'</span><span class="p">]</span><span class="o">.</span><span class="nb">sum</span><span class="p">()</span>
+<span class="n">suma_total</span> <span class="o">=</span> <span class="n">bikes_day</span><span class="p">[</span><span class="s">'cnt'</span><span class="p">]</span><span class="o">.</span><span class="nb">sum</span><span class="p">()</span>
+
+<span class="n">frac_casuales</span> <span class="o">=</span> <span class="n">suma_causales</span> <span class="o">/</span> <span class="n">suma_total</span>
+<span class="n">frac_registrados</span> <span class="o">=</span> <span class="n">suma_registrados</span> <span class="o">/</span> <span class="n">suma_total</span>
+
+<span class="n">labels</span> <span class="o">=</span> <span class="s">'Usuarios Causales'</span><span class="p">,</span> <span class="s">'Usuarios Registrados'</span>
+<span class="n">sizes</span> <span class="o">=</span> <span class="p">[</span><span class="n">frac_casuales</span><span class="p">,</span> <span class="n">frac_registrados</span><span class="p">]</span>
+
+<span class="n">fig1</span><span class="p">,</span> <span class="n">ax1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">pie</span><span class="p">(</span><span class="n">sizes</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">autopct</span><span class="o">=</span><span class="s">'</span><span class="si">%1.1</span><span class="s">f</span><span class="si">%%</span><span class="s">'</span><span class="p">,</span>
+        <span class="n">shadow</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">startangle</span><span class="o">=</span><span class="mi">90</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s">'equal'</span><span class="p">)</span>  <span class="c1"># Equal aspect ratio ensures that pie is drawn as a circle.
+</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p><img src="/assets/images/output_16_0.png" alt="png" /></p>
+
+<h3 id="ahora-se-trabajará-con-el-dataset-bikes_hour-veamos-qué-forma-tiene">Ahora se trabajará con el dataset bikes_hour. Veamos qué forma tiene.</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">print</span><span class="p">(</span><span class="s">"Dimensiones del dataset bikes_hour:"</span><span class="p">,</span> <span class="n">bikes_hour</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">bikes_hour</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Dimensiones del dataset bikes_hour: (17379, 16)
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>dteday</th>
+      <th>season</th>
+      <th>yr</th>
+      <th>mnth</th>
+      <th>hr</th>
+      <th>holiday</th>
+      <th>weekday</th>
+      <th>workingday</th>
+      <th>weathersit</th>
+      <th>temp</th>
+      <th>atemp</th>
+      <th>hum</th>
+      <th>windspeed</th>
+      <th>casual</th>
+      <th>registered</th>
+      <th>cnt</th>
+    </tr>
+    <tr>
+      <th>instant</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1</th>
+      <td>2011-01-01</td>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
+      <td>0</td>
+      <td>0</td>
+      <td>6</td>
+      <td>0</td>
+      <td>1</td>
+      <td>0.24</td>
+      <td>0.2879</td>
+      <td>0.81</td>
+      <td>0.0</td>
+      <td>3</td>
+      <td>13</td>
+      <td>16</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>2011-01-01</td>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
+      <td>1</td>
+      <td>0</td>
+      <td>6</td>
+      <td>0</td>
+      <td>1</td>
+      <td>0.22</td>
+      <td>0.2727</td>
+      <td>0.80</td>
+      <td>0.0</td>
+      <td>8</td>
+      <td>32</td>
+      <td>40</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>2011-01-01</td>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
+      <td>2</td>
+      <td>0</td>
+      <td>6</td>
+      <td>0</td>
+      <td>1</td>
+      <td>0.22</td>
+      <td>0.2727</td>
+      <td>0.80</td>
+      <td>0.0</td>
+      <td>5</td>
+      <td>27</td>
+      <td>32</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>2011-01-01</td>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
+      <td>3</td>
+      <td>0</td>
+      <td>6</td>
+      <td>0</td>
+      <td>1</td>
+      <td>0.24</td>
+      <td>0.2879</td>
+      <td>0.75</td>
+      <td>0.0</td>
+      <td>3</td>
+      <td>10</td>
+      <td>13</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>2011-01-01</td>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
+      <td>4</td>
+      <td>0</td>
+      <td>6</td>
+      <td>0</td>
+      <td>1</td>
+      <td>0.24</td>
+      <td>0.2879</td>
+      <td>0.75</td>
+      <td>0.0</td>
+      <td>0</td>
+      <td>1</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h3 id="ahora-se-graficará-la-cantidad-de-bicicletas-rentadas-por-hora-del-día">Ahora se graficará la cantidad de bicicletas rentadas por hora del día.</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">'Total de bicicletas rentadas, por hora'</span><span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">barplot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">bikes_hour</span><span class="p">[</span><span class="s">'hr'</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="n">bikes_hour</span><span class="p">[</span><span class="s">'cnt'</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">'Cantidad de bicicletas rentadas'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">'Hora del día'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Text(0.5, 0, 'Hora del día')
+</code></pre></div></div>
+
+<p><img src="/assets/images/output_20_1.png" alt="png" /></p>
+
+<h3 id="para-mostrar-la-relación-entre-la-cantidad-de-bicicletas-rentadas-y-los-atributos-cuantitativos-éstos-se-tiene-que-desnormalizar">Para mostrar la relación entre la cantidad de bicicletas rentadas y los atributos cuantitativos, éstos se tiene que <strong>desnormalizar</strong>.</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">bikes_hour_copy</span> <span class="o">=</span> <span class="n">bikes_hour</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">bikes_hour_copy</span><span class="p">[</span><span class="s">'temp'</span><span class="p">]</span> <span class="o">=</span> <span class="n">bikes_hour</span><span class="p">[</span><span class="s">'temp'</span><span class="p">]</span><span class="o">.</span><span class="nb">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="mi">47</span><span class="o">*</span><span class="n">t</span> <span class="o">-</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">bikes_hour_copy</span><span class="p">[</span><span class="s">'hum'</span><span class="p">]</span> <span class="o">=</span> <span class="n">bikes_hour</span><span class="p">[</span><span class="s">'hum'</span><span class="p">]</span><span class="o">.</span><span class="nb">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="mi">100</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="n">bikes_hour_copy</span><span class="p">[</span><span class="s">'windspeed'</span><span class="p">]</span> <span class="o">=</span> <span class="n">bikes_hour</span><span class="p">[</span><span class="s">'windspeed'</span><span class="p">]</span><span class="o">.</span><span class="nb">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="mi">67</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="a-continuación-se-obtiene-los-valores-únicos-de-temperatura">A continuación se obtiene los valores únicos de temperatura.</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">unique_temp</span> <span class="o">=</span> <span class="n">bikes_hour_copy</span><span class="p">[</span><span class="s">'temp'</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+<span class="n">unique_temp</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>array([ 3.28,  2.34,  1.4 ,  7.04,  9.86,  8.92, 11.74, 13.62, 12.68,
+       10.8 ,  7.98,  6.1 ,  4.22, -0.48, -1.42,  0.46, -2.36,  5.16,
+       -3.3 , -4.24, -5.18, -6.12, -7.06, 16.44, 18.32, 19.26, 20.2 ,
+       14.56, 17.38, 15.5 , 23.02, 22.08, 21.14, 23.96, 24.9 , 26.78,
+       27.72, 25.84, 28.66, 30.54, 29.6 , 32.42, 33.36, 34.3 , 31.48,
+       35.24, 36.18, 37.12, 38.06, 39.  ])
+</code></pre></div></div>
+
+<h3 id="ahora-se-calcula-el-promedio-de-bicicletas-rentadas-para-una-temperatura-dada">Ahora se calcula el promedio de bicicletas rentadas para una temperatura dada.</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">cnt_promedio</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">temp</span> <span class="ow">in</span> <span class="n">unique_temp</span><span class="p">:</span>
+    <span class="n">cnt_promedio</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">bikes_hour</span><span class="p">[</span><span class="s">'cnt'</span><span class="p">][</span> <span class="n">bikes_hour_copy</span><span class="p">[</span><span class="s">'temp'</span><span class="p">]</span> <span class="o">==</span> <span class="n">temp</span> <span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="p">)</span>
+
+<span class="n">cnt_por_temp</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">cnt_promedio</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="empecemos-con-el-aprendizaje-supervisado-realizando-regresión-lineal">Empecemos con el Aprendizaje Supervisado realizando Regresión Lineal.</h2>
+
+<h3 id="para-ver-si-existe-correlación-lineal-entre-la-temperatura-y-la-cantidad-de-bicicletas-rentadas-realizamos-una-gráfica-de-regresión-lineal">Para ver si existe correlación lineal entre la temperatura y la cantidad de bicicletas rentadas, realizamos una gráfica de regresión lineal.</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">regplot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">unique_temp</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">cnt_por_temp</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">'Bicicletas rentadas'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">'Temperatura (°C)'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Text(0.5, 0, 'Temperatura (°C)')
+</code></pre></div></div>
+
+<p><img src="/assets/images/output_29_1.png" alt="png" /></p>
+
+<h3 id="se-define-la-función-que-determina-los-coeficientes-de-la-regresión-lineal-mediante-la-ecuación-normal">Se define la función que determina los coeficientes de la regresión lineal, mediante la ecuación normal.</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">ecuacion_normal</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="s">"""
+    Encuentra la solución de mínimos cuadrados a partir de la ecuación normal
+
+    @param x: ndarray de dimension [T, n + 1] con los datos de entrada
+    @param y: ndarray de dimension [T, 1] con los datos de salida
+
+    @return w: ndarray de dimension [n + 1, T] con los parametros encontrados
+    """</span>
+
+    <span class="c1"># Esta función en realidad es una sola linea de código
+</span>    <span class="c1"># return --inserta aqui tu código--
+</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">T</span><span class="o">@</span><span class="n">x</span><span class="p">)</span><span class="o">@</span><span class="n">x</span><span class="o">.</span><span class="n">T</span><span class="o">@</span><span class="n">y</span>
+
+    <span class="k">return</span> <span class="n">theta</span>
+
+</code></pre></div></div>
+
+<h3 id="ahora-se-calculan-los-coeficientes-de-la-ecuación-lineal-con-los-datos-de-temperatura-y-cantidad-de-bibicletas-rentadas">Ahora se calculan los coeficientes de la ecuación lineal con los datos de temperatura y cantidad de bibicletas rentadas.</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">c_</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">unique_temp</span><span class="p">),</span> <span class="n">unique_temp</span><span class="p">]</span>
+<span class="n">theta_n</span> <span class="o">=</span> <span class="n">ecuacion_normal</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">cnt_por_temp</span><span class="p">)</span>
+<span class="n">theta_n</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>array([72.59955662,  7.60418594])
+</code></pre></div></div>
+
+<h3 id="a-continuación-se-va-a-estimar-la-cantidad-de-bicicletas-rentadas-para-los-valores-de-4-c-y-24-c-los-valores-obtenidos-son-truncados-a-enteros">A continuación se va a estimar la cantidad de bicicletas rentadas para los valores de 4 °C y 24 °C. Los valores obtenidos son truncados a enteros.</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">x_estimar</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">4</span><span class="p">,</span><span class="mi">24</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">x_aux</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">c_</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">x_estimar</span><span class="p">),</span> <span class="n">x_estimar</span><span class="p">]</span>
+<span class="n">y_estimado</span> <span class="o">=</span> <span class="n">x_aux</span> <span class="o">@</span> <span class="n">theta_n</span>
+<span class="k">print</span><span class="p">(</span><span class="s">"Para 4 °C -&gt; </span><span class="si">%</span><span class="s">i bicicletas. </span><span class="se">\n</span><span class="s">Para 24 °C -&gt; </span><span class="si">%</span><span class="s">i bicicletas."</span> <span class="o">%</span><span class="p">(</span><span class="n">y_estimado</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">y_estimado</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Para 4 °C -&gt; 103 bicicletas.
+Para 24 °C -&gt; 255 bicicletas.
+</code></pre></div></div>
+
+<h3 id="ahora-heremos-lo-mismo-con-las-columnas-de-humedad-y-velocidad-del-viento">Ahora heremos lo mismo con las columnas de humedad y velocidad del viento.</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">unique_hum</span> <span class="o">=</span> <span class="n">bikes_hour_copy</span><span class="p">[</span><span class="s">'hum'</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+<span class="n">unique_hum</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>array([ 81.,  80.,  75.,  86.,  76.,  77.,  72.,  82.,  88.,  87.,  94.,
+       100.,  71.,  66.,  57.,  46.,  42.,  39.,  44.,  47.,  50.,  43.,
+        40.,  35.,  30.,  32.,  64.,  69.,  55.,  59.,  63.,  68.,  74.,
+        51.,  56.,  52.,  49.,  48.,  37.,  33.,  28.,  38.,  36.,  93.,
+        29.,  53.,  34.,  54.,  41.,  45.,  92.,  62.,  58.,  61.,  60.,
+        65.,  70.,  27.,  21.,  25.,  26.,  31.,  73.,  24.,  23.,  22.,
+        19.,  15.,  67.,  10.,   8.,  12.,  14.,  13.,  17.,  16.,  18.,
+        96.,  20.,  85.,   0.,  90.,  83.,  78.,  84.,  89.,  79.,  97.,
+        91.])
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">cnt_promedio</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">hum</span> <span class="ow">in</span> <span class="n">unique_hum</span><span class="p">:</span>
+    <span class="n">cnt_promedio</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">bikes_hour</span><span class="p">[</span><span class="s">'cnt'</span><span class="p">][</span> <span class="n">bikes_hour_copy</span><span class="p">[</span><span class="s">'hum'</span><span class="p">]</span> <span class="o">==</span> <span class="n">hum</span> <span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="p">)</span>
+
+<span class="n">cnt_por_hum</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">cnt_promedio</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
+<span class="c1">#sns.regplot(x=bikes_hour_copy['hum'], y=bikes_hour_copy['cnt'])
+</span><span class="n">sns</span><span class="o">.</span><span class="n">regplot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">unique_hum</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">cnt_por_hum</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">'Bicicletas rentadas'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">'Humedad'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Text(0.5, 0, 'Humedad')
+</code></pre></div></div>
+
+<p><img src="/assets/images/output_39_1.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">c_</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">unique_hum</span><span class="p">),</span> <span class="n">unique_hum</span><span class="p">]</span>
+<span class="n">theta_n</span> <span class="o">=</span> <span class="n">ecuacion_normal</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">cnt_por_hum</span><span class="p">)</span>
+<span class="n">theta_n</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>array([277.00958906,  -1.53672055])
+</code></pre></div></div>
+
+<h3 id="ahora-estimamos-los-valores-de-bicicletas-rentadas-para-los-valores-de-10--y-100--de-humedad-relativa">Ahora estimamos los valores de bicicletas rentadas para los valores de 10 % y 100 % de humedad relativa.</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">x_estimar</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span><span class="mi">100</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">x_aux</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">c_</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">x_estimar</span><span class="p">),</span> <span class="n">x_estimar</span><span class="p">]</span>
+<span class="n">y_estimado</span> <span class="o">=</span> <span class="n">x_aux</span> <span class="o">@</span> <span class="n">theta_n</span>
+<span class="k">print</span><span class="p">(</span><span class="s">"Para 10</span><span class="si">%% -</span><span class="s">&gt; </span><span class="si">%</span><span class="s">i bicicletas.</span><span class="se">\n</span><span class="s">Para 100</span><span class="si">%% -</span><span class="s">&gt; </span><span class="si">%</span><span class="s">i bicicletas"</span>  <span class="o">%</span><span class="p">(</span><span class="n">y_estimado</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">y_estimado</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Para 10% -&gt; 201 bicicletas.
+Para 100% -&gt; 77 bicicletas
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">unique_viento</span> <span class="o">=</span> <span class="n">bikes_hour_copy</span><span class="p">[</span><span class="s">'windspeed'</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+<span class="n">unique_viento</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>array([ 0.    ,  6.0032, 16.9979, 19.0012, 19.9995, 12.998 , 15.0013,
+        8.9981, 11.0014, 22.0028, 30.0026, 23.9994, 27.9993, 26.0027,
+        7.0015, 32.9975, 36.9974, 31.0009, 35.0008, 39.0007, 43.9989,
+       40.9973, 51.9987, 46.0022, 50.0021, 43.0006, 54.002 , 56.9969,
+       55.9986, 47.9988])
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">cnt_promedio</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">viento</span> <span class="ow">in</span> <span class="n">unique_viento</span><span class="p">:</span>
+    <span class="n">cnt_promedio</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">bikes_hour</span><span class="p">[</span><span class="s">'cnt'</span><span class="p">][</span> <span class="n">bikes_hour_copy</span><span class="p">[</span><span class="s">'windspeed'</span><span class="p">]</span> <span class="o">==</span> <span class="n">viento</span> <span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="p">)</span>
+
+<span class="n">cnt_por_viento</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">cnt_promedio</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
+<span class="c1">#sns.regplot(x=bikes_hour_copy['windspeed'], y=bikes_hour_copy['cnt'])
+</span><span class="n">sns</span><span class="o">.</span><span class="n">regplot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">unique_viento</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">cnt_por_viento</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">'Bicicletas rentadas'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">'Velocidad del viento'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Text(0.5, 0, 'Velocidad del viento')
+</code></pre></div></div>
+
+<p><img src="/assets/images/output_45_1.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">c_</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">unique_viento</span><span class="p">),</span> <span class="n">unique_viento</span><span class="p">]</span>
+<span class="n">theta_n</span> <span class="o">=</span> <span class="n">ecuacion_normal</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">cnt_por_viento</span><span class="p">)</span>
+<span class="n">theta_n</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>array([215.5960658 ,  -1.38262394])
+</code></pre></div></div>
+
+<h3 id="ahora-se-estimamos-la-cantidad-de-bicicletas-rentadas-para-velocidades-del-viento-de-10-y-100-kmh">Ahora se estimamos la cantidad de bicicletas rentadas para velocidades del viento de 10 y 100 km/h.</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">x_estimar</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span><span class="mi">100</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">x_aux</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">c_</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">x_estimar</span><span class="p">),</span> <span class="n">x_estimar</span><span class="p">]</span>
+<span class="n">y_estimado</span> <span class="o">=</span> <span class="n">x_aux</span> <span class="o">@</span> <span class="n">theta_n</span>
+<span class="k">print</span><span class="p">(</span><span class="s">"Para 10 km/h -&gt; </span><span class="si">%</span><span class="s">i bicicletas.</span><span class="se">\n</span><span class="s">Para 100 km/h -&gt; </span><span class="si">%</span><span class="s">i bicicletas."</span> <span class="o">%</span><span class="p">(</span><span class="n">y_estimado</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">y_estimado</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Para 10 km/h -&gt; 201 bicicletas.
+Para 100 km/h -&gt; 77 bicicletas.
+</code></pre></div></div>
+
+<h3 id="ahora-se-explora-otro-dataset-que-contiene-información-sobre-los-viajes-que-realizan-los-usuarios-del-servicio-de-renta-de-bicicletas">Ahora se explora otro dataset que contiene información sobre los viajes que realizan los usuarios del servicio de renta de bicicletas.</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">trip_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s">"201909-capitalbikeshare-tripdata.csv"</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">"Dimensiones del dataset trip_data:"</span><span class="p">,</span> <span class="n">trip_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">trip_data</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Dimensiones del dataset trip_data: (360225, 9)
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Duration</th>
+      <th>Start date</th>
+      <th>End date</th>
+      <th>Start station number</th>
+      <th>Start station</th>
+      <th>End station number</th>
+      <th>End station</th>
+      <th>Bike number</th>
+      <th>Member type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>207</td>
+      <td>2019-09-01 00:00:27</td>
+      <td>2019-09-01 00:03:54</td>
+      <td>31246</td>
+      <td>M St &amp; Pennsylvania Ave NW</td>
+      <td>31128</td>
+      <td>23rd &amp; M St NW</td>
+      <td>W21128</td>
+      <td>Member</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>726</td>
+      <td>2019-09-01 00:00:46</td>
+      <td>2019-09-01 00:12:52</td>
+      <td>31124</td>
+      <td>14th &amp; Irving St NW</td>
+      <td>31116</td>
+      <td>California St &amp; Florida Ave NW</td>
+      <td>W01208</td>
+      <td>Member</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>4401</td>
+      <td>2019-09-01 00:00:48</td>
+      <td>2019-09-01 01:14:10</td>
+      <td>31129</td>
+      <td>15th St &amp; Pennsylvania Ave NW</td>
+      <td>31277</td>
+      <td>17th &amp; G St NW</td>
+      <td>W23690</td>
+      <td>Casual</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>388</td>
+      <td>2019-09-01 00:01:01</td>
+      <td>2019-09-01 00:07:30</td>
+      <td>31648</td>
+      <td>Potomac Ave &amp; Half St SW</td>
+      <td>31609</td>
+      <td>Maine Ave &amp; 7th St SW</td>
+      <td>W20449</td>
+      <td>Member</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>537</td>
+      <td>2019-09-01 00:01:09</td>
+      <td>2019-09-01 00:10:07</td>
+      <td>31200</td>
+      <td>Massachusetts Ave &amp; Dupont Circle NW</td>
+      <td>31229</td>
+      <td>New Hampshire Ave &amp; T St NW</td>
+      <td>W20206</td>
+      <td>Member</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="ahora-tratemos-de-hacer-algo-de-aprendizaje-no-supervisado">Ahora tratemos de hacer algo de Aprendizaje No Supervisado.</h2>
+<h3 id="veamos-si-podemos-establecer-una-relación-entre-las-estaciones-origen-y-las-estaciones-destino-de-los-usuarios">Veamos si podemos establecer una relación entre las estaciones origen y las estaciones destino de los usuarios.</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">sns</span><span class="o">.</span><span class="n">scatterplot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">trip_data</span><span class="p">[</span><span class="s">'Start station number'</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="n">trip_data</span><span class="p">[</span><span class="s">'End station number'</span><span class="p">],</span> <span class="n">data</span><span class="o">=</span><span class="n">trip_data</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">'Estación Destino'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">'Estación Origen'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Text(0.5, 0, 'Estación Origen')
+</code></pre></div></div>
+
+<p><img src="/assets/images/output_52_1.png" alt="png" /></p>
+
+<h3 id="a-continuación-se-realiza-el-método-del-codito-para-determinar-el-número-de-clusters">A continuación se realiza el método del codito para determinar el número de clusters.</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">my_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">c_</span><span class="p">[</span><span class="n">trip_data</span><span class="p">[</span><span class="s">'Start station number'</span><span class="p">],</span> <span class="n">trip_data</span><span class="p">[</span><span class="s">'End station number'</span><span class="p">]]</span>
+
+<span class="kn">from</span> <span class="nn">sklearn.cluster</span> <span class="kn">import</span> <span class="n">KMeans</span>
+
+<span class="n">wcss</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">):</span>
+    <span class="n">kmeans</span> <span class="o">=</span> <span class="n">KMeans</span><span class="p">(</span><span class="n">n_clusters</span><span class="o">=</span><span class="n">i</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="s">'k-means++'</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span> <span class="n">n_init</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">kmeans</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">my_array</span><span class="p">)</span>
+    <span class="n">wcss</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kmeans</span><span class="o">.</span><span class="n">inertia_</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">),</span> <span class="n">wcss</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">'Método del codito'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">'Número de clusters'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">'WCSS'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p><img src="/assets/images/output_54_0.png" alt="png" /></p>
+
+<h3 id="se-eligen-6-clusters-para-el-algoritmo-de-k-means">Se eligen 6 clusters para el algoritmo de k-means.</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">kmeans</span> <span class="o">=</span> <span class="n">KMeans</span><span class="p">(</span><span class="n">n_clusters</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="s">'k-means++'</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span> <span class="n">n_init</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">pred_y</span> <span class="o">=</span> <span class="n">kmeans</span><span class="o">.</span><span class="n">fit_predict</span><span class="p">(</span><span class="n">my_array</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">my_array</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">my_array</span><span class="p">[:,</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">kmeans</span><span class="o">.</span><span class="n">cluster_centers_</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">kmeans</span><span class="o">.</span><span class="n">cluster_centers_</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s">'red'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p><img src="/assets/images/output_56_0.png" alt="png" /></p>
+
+<h3 id="no-se-nota-una-distinción-entre-los-clusters-el-algoritmo-de-k-medias-no-es-el-adecuado-cuando-existem-muchos-clusters-se-debe-de-experimentar-con-otros-métodos">No se nota una distinción entre los clusters. El algoritmo de k-medias no es el adecuado cuando existem muchos clusters. Se debe de experimentar con otros métodos.</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+</code></pre></div></div>
