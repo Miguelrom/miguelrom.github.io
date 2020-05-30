@@ -1,3 +1,6 @@
+---
+title: Machine Learning aplicado a una compañía de renta de bicicletas
+---
 
 # Bike share dataset
 
@@ -1035,8 +1038,3 @@ plt.show()
 
 ### No se nota una distinción entre los clusters. El algoritmo de k-medias no es el adecuado cuando existem muchos clusters. Se debe de experimentar con otros métodos.
 
-
-
-```python
-
-```
