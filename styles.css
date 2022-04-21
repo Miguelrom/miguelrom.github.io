@@ -19,28 +19,10 @@
 }
 
 body {
-  font-size: 1.8rem;
+  font-size: 2rem;
   font-family: Arial, sans-serif;
   color: var(--text-color);
   min-width: 590px;
-}
-
-nav {
-  display: flex;
-  justify-content: end;
-  position: fixed;
-  width: 100%;
-  top: 0;
-  background-color: var(--snowy-grey);
-  border: var(--my-border);
-}
-
-nav ul {
-  display: flex;
-  justify-content: center;
-  list-style: none;
-  margin-right: 2vw;
-  font-size: 2rem;
 }
 
 a {
@@ -49,14 +31,131 @@ a {
   font-weight: bold;
 }
 
-nav a {
+
+.debug-border {
+  border: 2px solid black;
+}
+
+
+.topbar {
+  position: fixed;
+  width: 100%;
+  top: 0;
+  background-color: var(--snowy-grey);
+  border: var(--my-border);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0px 5vw;
+  overflow: hidden;
+}
+
+.page-title {
+  font-family: 'Times New Roman', Times, serif;
+  text-align: center;
+  padding: 5px;
+}
+
+.nav-menu {
+  display: flex;
+  list-style: none;
+  font-size: 2rem;
+  flex-direction: column;
+  align-items: center;
+}
+
+.nav-link {
   padding: 20px;
   display: block;
 }
 
-nav a:hover {
+.nav-link:hover {
   background-color: var(--snowy-blue);
 }
+
+#toggler-btn {
+  background-color: transparent;
+  border: none;
+  color: var(--text-color);
+  font-size: 3.2rem;;
+  display: block;
+  cursor: pointer;
+  padding: 5px;
+}
+
+#toggler-btn:active {
+  transform: translateY(2px);
+}
+
+.title-section {
+  display: flex;
+  justify-content: space-between;
+}
+
+.invisible {
+  display: none;
+}
+
+.nav-off {
+  animation-name: nav-off-animation;
+  animation-duration: 0.7s;
+  animation-timing-function: ease;
+  height: 0px;
+}
+
+@keyframes nav-off-animation {
+  from {
+    height: 190px;
+  }
+
+  to {
+    height: 0px;
+  }
+}
+
+
+.nav-on {
+  display: block;
+  animation-name: nav-on-animation;
+  animation-duration: 0.7s;
+  animation-timing-function: ease;
+}
+
+@keyframes nav-on-animation {
+  from {
+    height: 0px;
+  }
+
+  to {
+    height: 190px;
+  }
+}
+
+
+@media (min-width: 768px) {
+
+  .topbar {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .nav-menu {
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  #toggler-btn {
+    display: none;
+  }
+
+
+  #navigation {
+    display: block;
+    height: 100%;
+  }
+
+}/*End media query*/
+
 
 #welcome-section {
   height: 100vh;
@@ -66,14 +165,14 @@ nav a:hover {
   align-items: center;
   padding: 30px 0px;
   color: var(--text-color);
-  background-color: var(--snowy-red);
+  background-color: purple;
   border: var(--my-border);
 }
 
-h1 {
+/* h1 {
   font-size: 4rem;
   padding-top: 30px;
-}
+} */
 
 .presentation {
   display: static;
