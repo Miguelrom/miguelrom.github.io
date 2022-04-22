@@ -22,7 +22,6 @@ body {
   font-size: 2rem;
   font-family: Arial, sans-serif;
   color: var(--text-color);
-  min-width: 590px;
 }
 
 a {
@@ -31,11 +30,9 @@ a {
   font-weight: bold;
 }
 
-
 .debug-border {
   border: 2px solid black;
 }
-
 
 .topbar {
   position: fixed;
@@ -51,7 +48,7 @@ a {
 }
 
 .page-title {
-  font-family: 'Times New Roman', Times, serif;
+  font-family: "Times New Roman", Times, serif;
   text-align: center;
   padding: 5px;
 }
@@ -77,7 +74,7 @@ a {
   background-color: transparent;
   border: none;
   color: var(--text-color);
-  font-size: 3.2rem;;
+  font-size: 3.2rem;
   display: block;
   cursor: pointer;
   padding: 5px;
@@ -113,7 +110,6 @@ a {
   }
 }
 
-
 .nav-on {
   display: block;
   animation-name: nav-on-animation;
@@ -131,9 +127,7 @@ a {
   }
 }
 
-
 @media (min-width: 768px) {
-
   .topbar {
     flex-direction: row;
     justify-content: space-between;
@@ -148,38 +142,40 @@ a {
     display: none;
   }
 
-
   #navigation {
     display: block;
     height: 100%;
   }
-
-}/*End media query*/
+} /*End media query*/
 
 
 #welcome-section {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 30px 0px;
+  min-height: 100vh;
+  padding-top: 100px;
+  padding-bottom: 50px;
   color: var(--text-color);
   background-color: purple;
   border: var(--my-border);
 }
 
-/* h1 {
-  font-size: 4rem;
-  padding-top: 30px;
-} */
-
 .presentation {
-  display: static;
+  width: 500px;
+  margin: 35px auto;
+  padding: 0px 25px;
   list-style: inside;
-  width: 55vw;
-  min-width: 550px;
-  margin-top: 20px;
+  text-align: justify;
+}
+
+@media (min-width: 576px) {
+  .presentation {
+    width: 90vw;
+  }
+}
+
+@media (min-width: 768px) {
+  .presentation {
+    width: 700px;
+  }
 }
 
 .presentation ul {
@@ -198,6 +194,8 @@ a {
 .presentation p {
   margin: 10px 0px;
 }
+
+
 
 #projects {
   padding: 80px 25px;
@@ -247,7 +245,7 @@ h2 {
   width: 270px;
   text-align: center;
   display: block;
-  background-color: var(--snowy-red);;
+  background-color: var(--snowy-red);
   border: var(--my-border);
   transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
 }
@@ -295,14 +293,12 @@ footer {
   border: var(--my-border);
 }
 
-@media screen and (max-width: 830px){
-
+@media screen and (max-width: 830px) {
   .network {
     display: grid;
-    grid-template-columns:  repeat(auto-fill, minmax(330px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
     gap: 25px;
     padding-top: 35px;
     text-align: center;
   }
-
-}/*End media query*/
+} /*End media query*/
