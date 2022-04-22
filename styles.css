@@ -240,14 +240,14 @@ h2 {
 }
 
 .codepen-btn {
-  padding: 10px 10px;
+  padding: 10px 5px;
   margin: 0px auto;
-  width: 270px;
+  width: 300px;
   text-align: center;
   display: block;
   background-color: var(--snowy-red);
   border: var(--my-border);
-  transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+  transition: box-shadow 0.3s ease-out;
 }
 
 .codepen-btn:hover {
@@ -255,8 +255,10 @@ h2 {
 }
 
 .codepen-btn:hover > i {
-  transform: translateX(2px);
+  transform: translateX(4px);
+  transition: transform 0.5s ease-out;
 }
+
 
 #contact {
   padding: 150px 0px;
@@ -285,14 +287,6 @@ h3 {
   transform: translateY(-8px);
 }
 
-footer {
-  padding: 20px 25px;
-  width: 100%;
-  font-size: 2rem;
-  background-color: var(--snowy-grey);
-  border: var(--my-border);
-}
-
 @media screen and (max-width: 830px) {
   .network {
     display: grid;
@@ -302,3 +296,11 @@ footer {
     text-align: center;
   }
 } /*End media query*/
+
+footer {
+  padding: 20px 25px;
+  width: 100%;
+  font-size: 2rem;
+  background-color: var(--snowy-grey);
+  border: var(--my-border);
+}
