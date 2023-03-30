@@ -196,9 +196,8 @@ a {
 }
 
 
-
 #projects {
-  padding: 80px 25px;
+  padding: 70px 25px;
   background-color: var(--snowy-blue);
   border: var(--my-border);
 }
@@ -206,17 +205,36 @@ a {
 h2 {
   text-align: center;
   font-size: 3.5rem;
+  margin-bottom: 4rem;
+}
+
+.projects-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 5rem;
 }
 
 .projects-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
-  gap: 25px;
-  padding: 35px 0px;
+  grid-template-columns: 1fr;
+  gap: 32px;
+}
+
+@media screen and (min-width: 768px) {
+  .projects-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media screen and (min-width: 1200px) {
+  .projects-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .project-tile {
-  border: var(--my-border);
+  border: 2px solid black;
+  width: 350px;
   transition: box-shadow 0.3s ease-out;
 }
 
@@ -224,11 +242,16 @@ h2 {
   box-shadow: 0px 0px 6px 1px var(--snowy-green);
 }
 
+.project-tile figure {
+  width: 100%;
+  height: 200px;
+}
+
 .project-tile img {
-  max-width: 100%;
+  width: 100%;
+  height: 100%;
   display: block;
-  object-fit: contain;
-  border: var(--my-border);
+  object-fit: cover;
 }
 
 .project-tile p {
@@ -236,7 +259,6 @@ h2 {
   font-size: 2rem;
   padding: 10px 0px;
   background-color: var(--snowy-red);
-  border: var(--my-border);
 }
 
 .codepen-btn {
@@ -261,14 +283,14 @@ h2 {
 
 
 #contact {
-  padding: 150px 0px;
+  padding: 70px 0px;
   background-color: var(--snowy-red);
   border: var(--my-border);
 }
 
 h3 {
   text-align: center;
-  padding: 60px 0px;
+  padding: 4rem 0 10rem 0;
 }
 
 .network {
